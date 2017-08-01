@@ -19,28 +19,42 @@ class TableViewController: UITableViewController {
     
     var todos = [String]()
     
+    struct State {
+        let todos: [String]
+        let text: String
+    }
+    
+    // 统一更新 UI
+    var state = State(todos: [], text: "") {
+        didSet {
+            // 新旧值对比，有变化时更新 UI
+            if oldValue.todos != state.todos {
+                tableView.reloadData()
+                title = "TODO - (\(state.todos.count))"
+            }
+            if oldValue.text != state.text {
+                let isItemLengthEnough = state.text.count >= 3
+                navigationItem.rightBarButtonItem?.isEnabled = isItemLengthEnough
+                
+                let inputIndexPath = IndexPath(row: 0, section: Section.input.rawValue)
+                let inputCell = tableView.cellForRow(at: inputIndexPath) as? TableInputCell
+                inputCell?.textField.text = state.text
+            }
+        }
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         self.title = "TODO - (0)"
         navigationItem.rightBarButtonItem?.isEnabled = false
         
         ToDoStore.shared.getToDoItems { (data) in
-            self.todos += data
-            self.title = "TODO - (\(self.todos.count))"
-            self.tableView.reloadData()
+            self.state = State(todos: self.state.todos + data, text: self.state.text)
         }
     }
     
     @IBAction func addButtonPressed(_ sender: Any) {
-        let inputIndexPath = IndexPath(row: 0, section: Section.input.rawValue)
-        guard let inputCell = tableView.cellForRow(at: inputIndexPath) as? TableInputCell,
-              let text = inputCell.textField.text else {
-            return
-        }
-        todos.insert(text, at: 0)
-        tableView.reloadData()
-        inputCell.textField.text = ""
-        navigationItem.rightBarButtonItem?.isEnabled = false
+        state = State(todos: [state.text] + state.todos, text: "")
     }
     
     override func numberOfSections(in tableView: UITableView) -> Int {
@@ -53,7 +67,8 @@ class TableViewController: UITableViewController {
         }
         switch section {
         case .input: return 1
-        case .todos: return todos.count
+        // 从 state 中读取
+        case .todos: return state.todos.count
         case .max: fatalError()
         }
     }
@@ -72,7 +87,8 @@ class TableViewController: UITableViewController {
             return inputCell
         case .todos:
             let cell = tableView.dequeueReusableCell(withIdentifier: todoCellReuseId, for: indexPath)
-            cell.textLabel?.text = todos[indexPath.row]
+            // 从 state 中读取
+            cell.textLabel?.text = state.todos[indexPath.row]
             return cell
         default:
             fatalError()
@@ -80,17 +96,18 @@ class TableViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        if indexPath.section == Section.todos.rawValue {
-            todos.remove(at: indexPath.row)
-            self.title = "TODO - (\(todos.count))"
-            tableView.reloadData()
+        guard indexPath.section == Section.todos.rawValue else {
+            return
         }
+        // 从数组中移除 indexPath.row 对应的数据
+        let newTodos = Array(state.todos[..<indexPath.row] + state.todos[(indexPath.row + 1)...])
+        state = State(todos: newTodos, text: state.text)
     }
 }
 
 extension TableViewController: TableInputCellDelegate {
     func inputChanged(cell: TableInputCell, text: String) {
-        let isItemLengthEnough = text.count >= 3
-        navigationItem.rightBarButtonItem?.isEnabled = isItemLengthEnough
+        // 重新赋值
+        state = State(todos: state.todos, text: text)
     }
 }
