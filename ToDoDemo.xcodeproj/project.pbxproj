@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B61F0CDD1F322D3B00BB4141 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = B61F0CDC1F322D3B00BB4141 /* Store.swift */; };
+		B61F0CDF1F322F4A00BB4141 /* TableViewDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = B61F0CDE1F322F4A00BB4141 /* TableViewDataSource.swift */; };
 		B6FA5AE51F2F91FB004BEAD1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6FA5AE41F2F91FB004BEAD1 /* AppDelegate.swift */; };
 		B6FA5AEA1F2F91FB004BEAD1 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B6FA5AE81F2F91FB004BEAD1 /* Main.storyboard */; };
 		B6FA5AEC1F2F91FB004BEAD1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B6FA5AEB1F2F91FB004BEAD1 /* Assets.xcassets */; };
@@ -29,6 +31,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		B61F0CDC1F322D3B00BB4141 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
+		B61F0CDE1F322F4A00BB4141 /* TableViewDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableViewDataSource.swift; sourceTree = "<group>"; };
 		B6FA5AE11F2F91FB004BEAD1 /* ToDoDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ToDoDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B6FA5AE41F2F91FB004BEAD1 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		B6FA5AE91F2F91FB004BEAD1 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -88,6 +92,8 @@
 				B6FA5B061F2F9647004BEAD1 /* TableInputCell.swift */,
 				B6FA5B0A1F30B314004BEAD1 /* .gitignore */,
 				B6FA5B081F2F9C62004BEAD1 /* TableViewController.swift */,
+				B61F0CDE1F322F4A00BB4141 /* TableViewDataSource.swift */,
+				B61F0CDC1F322D3B00BB4141 /* Store.swift */,
 				B6FA5AEB1F2F91FB004BEAD1 /* Assets.xcassets */,
 				B6FA5AE81F2F91FB004BEAD1 /* Main.storyboard */,
 				B6FA5AED1F2F91FB004BEAD1 /* LaunchScreen.storyboard */,
@@ -207,6 +213,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B61F0CDF1F322F4A00BB4141 /* TableViewDataSource.swift in Sources */,
+				B61F0CDD1F322D3B00BB4141 /* Store.swift in Sources */,
 				B6FA5B051F2F92EA004BEAD1 /* ToDoStore.swift in Sources */,
 				B6FA5AE51F2F91FB004BEAD1 /* AppDelegate.swift in Sources */,
 				B6FA5B091F2F9C62004BEAD1 /* TableViewController.swift in Sources */,

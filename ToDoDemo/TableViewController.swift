@@ -13,101 +13,101 @@ let todoCellReuseId = "todoCell"
 
 class TableViewController: UITableViewController {
     
-    enum Section: Int {
-        case input = 0, todos, max
+    struct State: StateType {
+        var dataSource = TableViewDataSource(todos: [], owner: nil)
+        var text: String = ""
     }
     
-    var todos = [String]()
-    
-    struct State {
-        let todos: [String]
-        let text: String
+    enum Action: ActionType {
+        case updateText(text: String)
+        case addToDos(items: [String])
+        case removeToDo(index: Int)
+        case loadToDos
     }
     
-    // 统一更新 UI
-    var state = State(todos: [], text: "") {
-        didSet {
-            // 新旧值对比，有变化时更新 UI
-            if oldValue.todos != state.todos {
-                tableView.reloadData()
-                title = "TODO - (\(state.todos.count))"
-            }
-            if oldValue.text != state.text {
-                let isItemLengthEnough = state.text.count >= 3
-                navigationItem.rightBarButtonItem?.isEnabled = isItemLengthEnough
-                
-                let inputIndexPath = IndexPath(row: 0, section: Section.input.rawValue)
-                let inputCell = tableView.cellForRow(at: inputIndexPath) as? TableInputCell
-                inputCell?.textField.text = state.text
+    enum Command: CommandType {
+        case loadToDos(completion: ([String]) -> Void)
+    }
+    
+    lazy var reducer: (State, Action) -> (state: State, command: Command?) = {
+        [weak self] (state: State, action: Action) in
+        
+        var state = state
+        var command: Command? = nil
+        
+        switch action {
+        case .updateText(let text):
+            state.text = text
+        case .addToDos(let items):
+            state.dataSource = TableViewDataSource(todos: items + state.dataSource.todos, owner: state.dataSource.owner)
+        case .removeToDo(let index):
+            let oldToDos = state.dataSource.todos
+            state.dataSource = TableViewDataSource(todos: Array(oldToDos[..<index] + oldToDos[(index + 1)...]), owner: state.dataSource.owner)
+        case .loadToDos:
+            command = Command.loadToDos { data in
+                self?.store.dispatch(.addToDos(items: data))
             }
         }
+        
+        return (state, command)
     }
+    
+    var store: Store<State, Action, Command>!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.title = "TODO - (0)"
-        navigationItem.rightBarButtonItem?.isEnabled = false
         
-        ToDoStore.shared.getToDoItems { (data) in
-            self.state = State(todos: self.state.todos + data, text: self.state.text)
+        let dataSource = TableViewDataSource(todos: [], owner: self)
+        store = Store(reducer: reducer, initialState: State(dataSource: dataSource, text: ""))
+        
+        store.subscribe { [weak self] (state, previousState, command) in
+            self?.stateDidChanged(state: state, previousState: previousState, command: command)
+        }
+        
+        stateDidChanged(state: store.state, previousState: nil, command: nil)
+        store.dispatch(.loadToDos)
+    }
+    
+    func stateDidChanged(state: State, previousState: State?, command: Command?) {
+        if let command = command {
+            switch command {
+            case .loadToDos(let handler):
+                ToDoStore.shared.getToDoItems(completionHandler: handler)
+            }
+        }
+        
+        if previousState == nil || previousState!.dataSource.todos != state.dataSource.todos {
+            let dataSource = state.dataSource
+            tableView.dataSource = dataSource
+            tableView.reloadData()
+            title = "TODO - (\(dataSource.todos.count))"
+        }
+        
+        if previousState == nil || previousState!.text != state.text {
+            let isItemLengthEnough = state.text.count >= 3
+            navigationItem.rightBarButtonItem?.isEnabled = isItemLengthEnough
+            
+            let indexPath = IndexPath(row: 0, section: TableViewDataSource.Section.input.rawValue)
+            let inputCell = tableView.cellForRow(at: indexPath) as? TableInputCell
+            inputCell?.textField.text = state.text
         }
     }
     
     @IBAction func addButtonPressed(_ sender: Any) {
-        state = State(todos: [state.text] + state.todos, text: "")
-    }
-    
-    override func numberOfSections(in tableView: UITableView) -> Int {
-        return Section.max.rawValue
-    }
-    
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        guard let section = Section(rawValue: section) else {
-            fatalError()
-        }
-        switch section {
-        case .input: return 1
-        // 从 state 中读取
-        case .todos: return state.todos.count
-        case .max: fatalError()
-        }
-    }
-    
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let section = Section(rawValue: indexPath.section) else {
-            fatalError()
-        }
-        switch section {
-        case .input:
-            let cell = tableView.dequeueReusableCell(withIdentifier: inputCellReuseId, for: indexPath)
-            guard let inputCell = cell as? TableInputCell else {
-                return cell
-            }
-            inputCell.delegate = self
-            return inputCell
-        case .todos:
-            let cell = tableView.dequeueReusableCell(withIdentifier: todoCellReuseId, for: indexPath)
-            // 从 state 中读取
-            cell.textLabel?.text = state.todos[indexPath.row]
-            return cell
-        default:
-            fatalError()
-        }
+        store.dispatch(.addToDos(items: [store.state.text]))
+        store.dispatch(.updateText(text: ""))
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        guard indexPath.section == Section.todos.rawValue else {
+        guard indexPath.section == TableViewDataSource.Section.todos.rawValue else {
             return
         }
-        // 从数组中移除 indexPath.row 对应的数据
-        let newTodos = Array(state.todos[..<indexPath.row] + state.todos[(indexPath.row + 1)...])
-        state = State(todos: newTodos, text: state.text)
+        store.dispatch(.removeToDo(index: indexPath.row))
     }
 }
 
 extension TableViewController: TableInputCellDelegate {
     func inputChanged(cell: TableInputCell, text: String) {
-        // 重新赋值
-        state = State(todos: state.todos, text: text)
+        store.dispatch(.updateText(text: text))
     }
 }
